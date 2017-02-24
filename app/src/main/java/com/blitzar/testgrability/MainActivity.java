@@ -1,8 +1,6 @@
 package com.blitzar.testgrability;
 
 import android.os.AsyncTask;
-import android.os.Parcel;
-import android.os.Parcelable;
 import android.support.v4.app.FragmentTransaction;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -19,22 +17,16 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 
 public class MainActivity extends AppCompatActivity {
 
     AbsListView absListView;
 
-    static String[] listCategories= {"Entertainment","Entertainment", "Games","Music","Navigation","Photo & Video","Shopping","Social Networking", "Travel","Utilities"};
+    static String[] listCategories= {"Entertainment", "Games","Music","Navigation","Photo & Video","Shopping","Social Networking", "Travel","Utilities"};
+    Integer[] imgCategories={R.drawable.ic_show_chart_black_24dp, R.drawable.ic_gamepad_black_24dp, R.drawable.ic_straighten_black_24dp, R.drawable.ic_navigation_black_24dp,
+            R.drawable.ic_photo_size_select_actual_black_24dp, R.drawable.ic_mood_black_24dp, R.drawable.ic_group_black_24dp, R.drawable.ic_flight_black_24dp, R.drawable.ic_fullscreen_black_24dp};
 
-    ArrayAdapter<String> adapter;
     String ims;
 
     private ArrayList<Entry> games= new ArrayList<>();
@@ -50,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
 
     private ArrayList<Entry> entries= new ArrayList<>();
     private Entry data;
-    private static String url = "https://itunes.apple.com/us/rss/topfreeapplications/limit=20/json";
+    private static String url = "https://itunes.apple.com/us/rss/topfreeapplications/limit=40/json";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,16 +52,23 @@ public class MainActivity extends AppCompatActivity {
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.my_toolbar);
         setSupportActionBar(toolbar);
+        //set Background for list
+        int[] listItemBack= new int[] {R.drawable.fancy_list_background1, R.drawable.fancy_list_background2};
 
-        absListView = (AbsListView) findViewById(R.id.listView);
+        absListView = (AbsListView) findViewById(R.id.list);
 
         setTitle(getResources().getText(R.string.categories_title));
 
-        adapter= new ArrayAdapter<String>(this, android.R.layout.simple_expandable_list_item_1, listCategories);
+
+
+
+        ListItemAdapter adapter = new ListItemAdapter(this, listCategories, imgCategories);
         absListView.setAdapter(adapter);
+
+        int listItemBackPos=listCategories.length%listItemBack.length;
+        absListView.setBackgroundResource(listItemBack[listItemBackPos]);
         //bring data
         new GetFeed().execute();
-
         absListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -78,59 +77,56 @@ public class MainActivity extends AppCompatActivity {
                 evaluatePosition(position);
             }
         });
-
     }
 
     private void evaluatePosition(int position) {
 
         GalleryFragment galleryFragment = (GalleryFragment) getSupportFragmentManager().findFragmentByTag("galleryFragment");
         switch (position) {
+            case 0:
+                if (galleryFragment == null) {
+                        System.out.println(entertainment);
+                        callFragment(entertainment);
+                    }
+                break;
             case 1:
                 if (galleryFragment == null) {
-
-                        Log.d("fsd", String.valueOf(entertainment));
-                        callFragment(galleryFragment, entertainment);
-                    }
-
-                break;
-            case 2:
-                if (galleryFragment == null) {
-                        callFragment(galleryFragment, games);
+                        callFragment(games);
                     }
                     break;
+            case 2:
+                if (galleryFragment == null) {
+                        callFragment(music);
+                }
+                break;
             case 3:
                 if (galleryFragment == null) {
-                        callFragment(galleryFragment, music);
+                        callFragment(nav);
                 }
                 break;
             case 4:
                 if (galleryFragment == null) {
-                        callFragment(galleryFragment, nav);
+                        callFragment(photo);
                 }
                 break;
             case 5:
                 if (galleryFragment == null) {
-                        callFragment(galleryFragment, photo);
+                        callFragment(shop);
                 }
                 break;
             case 6:
                 if (galleryFragment == null) {
-                        callFragment(galleryFragment, shop);
+                        callFragment(sn);
                 }
                 break;
             case 7:
                 if (galleryFragment == null) {
-                        callFragment(galleryFragment, sn);
+                        callFragment(travel);
                 }
                 break;
             case 8:
                 if (galleryFragment == null) {
-                        callFragment(galleryFragment, travel);
-                }
-                break;
-            case 9:
-                if (galleryFragment == null) {
-                            callFragment(galleryFragment, utilities);
+                            callFragment(utilities);
                 }
                 break;
                     default:
@@ -173,7 +169,7 @@ public class MainActivity extends AppCompatActivity {
                             data.setSummary(label);
                             Log.d("hola", term);
                             entries.add(i, data);
-                            //System.out.printf("das",Arrays.toString(entries));
+                            System.out.println(entries);
                         }
 
                     } catch (final JSONException e) {
@@ -196,6 +192,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             protected void onPostExecute(Void aVoid) {
                 super.onPostExecute(aVoid);
+                System.out.println(entries);
                 evaluateContent(entries);
             }
         }
@@ -203,12 +200,12 @@ public class MainActivity extends AppCompatActivity {
     private void evaluateContent(ArrayList<Entry> entries) {
         Entry e;
         int ent=0, g=0,m=0,n=0,p=0,s=0,soc=0,t=0,u=0;
-
+        System.out.println(entries);
         for(int i=0; i<entries.size(); i++) {
             e = entries.get(i);
             switch (e.getCategory()) {
                 case "Entertainment":
-                    games.add(ent,e);
+                    entertainment.add(ent, e);
                     ent =+ 1;
                     break;
                 case "Games":
@@ -250,14 +247,14 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void callFragment(GalleryFragment galleryFragment, ArrayList<Entry> entry) {
+    private void callFragment(ArrayList<Entry> entry) {
         //create parcel and add
-        ArrayList<Entry> e= entry;
-        galleryFragment= new GalleryFragment();
+        ArrayList<Entry> e= new ArrayList<>();
+        e.addAll(entry);
+        GalleryFragment galleryFragment= new GalleryFragment();
         Bundle bundle = new Bundle();
         bundle.putParcelableArrayList("Entry",e);
         galleryFragment.setArguments(bundle);
-        Log.d("s", String.valueOf(entry));
         //Initiate transaction
         FragmentTransaction transaction= getSupportFragmentManager().beginTransaction();
         transaction.replace(android.R.id.content, galleryFragment, "galleryFragment");
